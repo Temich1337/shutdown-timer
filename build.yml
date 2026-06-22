@@ -18,14 +18,26 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install PyInstaller
-        run: pip install pyinstaller
+      - name: Install dependencies
+        run: pip install pyinstaller pillow
+
+      - name: Extract icon from source
+        run: |
+          python - << 'PYEOF'
+          import base64, re
+
+          src = open("shutdown_timer.py", encoding="utf-8").read()
+          match = re.search(r'ICON_B64 = """(.+?)"""', src, re.DOTALL)
+          data = base64.b64decode(match.group(1).strip())
+          open("icon.ico", "wb").write(data)
+          print(f"icon.ico extracted: {len(data)} bytes")
+          PYEOF
 
       - name: Build .exe
         run: |
           pyinstaller --onefile --windowed `
             --name "ShutdownTimer" `
-            --version-file version.txt `
+            --icon "icon.ico" `
             shutdown_timer.py
 
       - name: Upload artifact
